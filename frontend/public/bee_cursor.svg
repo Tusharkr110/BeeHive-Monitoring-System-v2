@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+  <defs>
+    <radialGradient id="honeyGlow" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </radialGradient>
+    <style>
+      @keyframes wingLeft {
+        0%, 100% { transform: rotate(-35deg) scaleY(1); }
+        50% { transform: rotate(-15deg) scaleY(0.4); }
+      }
+      @keyframes wingRight {
+        0%, 100% { transform: rotate(35deg) scaleY(1); }
+        50% { transform: rotate(15deg) scaleY(0.4); }
+      }
+      .wing-l { animation: wingLeft 0.08s infinite ease-in-out; transform-origin: 12px 10px; }
+      .wing-r { animation: wingRight 0.08s infinite ease-in-out; transform-origin: 24px 10px; }
+    </style>
+  </defs>
+
+  <!-- Left Translucent Wing -->
+  <g class="wing-l">
+    <ellipse cx="10" cy="8" rx="6" ry="10" fill="rgba(224,242,254,0.85)" stroke="#0284c7" stroke-width="1.2" transform="rotate(-35 10 8)"/>
+  </g>
+
+  <!-- Right Translucent Wing -->
+  <g class="wing-r">
+    <ellipse cx="26" cy="8" rx="6" ry="10" fill="rgba(224,242,254,0.85)" stroke="#0284c7" stroke-width="1.2" transform="rotate(35 26 8)"/>
+  </g>
+
+  <!-- Antennae -->
+  <path d="M14 11 Q10 4 7 5 M22 11 Q26 4 29 5" stroke="#0f172a" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <circle cx="7" cy="5" r="1.5" fill="#22d3ee"/>
+  <circle cx="29" cy="5" r="1.5" fill="#22d3ee"/>
+
+  <!-- Honeybee Abdomen -->
+  <ellipse cx="18" cy="22" rx="10" ry="12.5" fill="url(#honeyGlow)" stroke="#78350f" stroke-width="1.8"/>
+
+  <!-- Black Carbon Stripes -->
+  <path d="M8 18 C13 21 23 21 28 18" stroke="#0f172a" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+  <path d="M9 23 C14 26 22 26 27 23" stroke="#0f172a" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+  <path d="M11 28 C15 30 21 30 25 28" stroke="#0f172a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Eyes -->
+  <ellipse cx="14" cy="14" rx="2.5" ry="3" fill="#0f172a"/>
+  <ellipse cx="22" cy="14" rx="2.5" ry="3" fill="#0f172a"/>
+  <circle cx="13" cy="13" r="0.8" fill="#ffffff"/>
+  <circle cx="21" cy="13" r="0.8" fill="#ffffff"/>
+
+  <!-- Target Marker Node -->
+  <circle cx="3" cy="3" r="2.5" fill="#22d3ee"/>
+</svg>

@@ -44,8 +44,8 @@ export const hivesAPI = {
   // Get all hives (admin sees all, farmer sees owned)
   getAllHives: () => api.get('/hives'),
   
-  // Get latest sensor data for a specific hive
-  getLatestData: (hiveId) => api.get(`/hives/data/${hiveId}/latest`),
+  // Get latest sensor data for a specific hive (bypass cache for instant updates)
+  getLatestData: (hiveId) => api.get(`/hives/data/${hiveId}/latest?t=${Date.now()}`),
   
   // Get historical data
   getHistory: (hiveId, params = {}) => api.get(`/hives/data/${hiveId}/history`, { params }),
@@ -57,7 +57,10 @@ export const hivesAPI = {
   updateHive: (hiveId, updates) => api.put(`/hives/${hiveId}`, updates),
   
   // Delete hive (admin only)
-  deleteHive: (hiveId) => api.delete(`/hives/${hiveId}`)
+  deleteHive: (hiveId) => api.delete(`/hives/${hiveId}`),
+
+  // Simulate alert states
+  simulateData: (hiveId, type) => api.post('/hives/simulate', { hive_id: hiveId, type })
 };
 
 export default api;

@@ -14,7 +14,8 @@ const HiveDataSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  sound_level: {
+  // Field name matches the ESP32 firmware and the trained ML model.
+  sound_envelope: {
     type: Number,
     default: 0,
   },
@@ -33,12 +34,19 @@ const HiveDataSchema = new mongoose.Schema({
   timestamp: {
     type: Date,
     default: Date.now,
+    expires: 30 * 24 * 60 * 60, // Auto-purge records older than 30 days (TTL index)
   },
 
   // ── ML prediction fields ──────────────────────────────────────────────────
+  // Updated enums to match the current ML model's actual classes:
+  //   NORMAL     → "normal"
+  //   MONITORING → "monitoring"
+  //   CRITICAL   → "critical"
+  // The old model used "stressed_queenless" / "stressed_anomaly" which no
+  // longer correspond to what the trained Random Forest outputs.
   ml_prediction: {
     type: String,
-    enum: ["normal", "stressed_queenless", "stressed_anomaly", "unavailable"],
+    enum: ["normal", "monitoring", "critical", "unavailable"],
     default: "unavailable",
   },
   ml_severity: {

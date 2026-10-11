@@ -23,8 +23,11 @@ const char* WIFI_SSID = "YOUR_WIFI_SSID";      // Change this
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASS";  // Change this
 
 // ===== BACKEND API =====
-const char* API_ENDPOINT = "http://your-backend-url.com/api/hives/data";  // Change this
+// Replace IP below with your computer's local IP address (e.g., http://10.216.19.146:5000/api/hives/data)
+const char* API_ENDPOINT = "http://10.216.19.146:5000/api/hives/data";
+const char* API_KEY = "beehive_device_key_2026"; // Must match DEVICE_API_KEY in backend .env
 const char* HIVE_ID = "HIVE001";  // Unique identifier for this hive
+const char* TARGET_PHONE_NUMBER = "+918797726950"; // Replace with your phone number
 
 // ===== PIN SETUP =====
 #define DHTPIN 14
@@ -65,6 +68,11 @@ const unsigned long SMS_COOLDOWN = 300000; // 5 minutes between SMS
 bool wifiConnected = false;
 bool smsAlertActive = false;
 
+volatile bool rawVibTriggered = false;
+void IRAM_ATTR vibrationISR() {
+  rawVibTriggered = true;
+}
+
 // ===== FUNCTION PROTOTYPES =====
 void connectWiFi();
 void sendDataToBackend(float temp, float hum, int sound, int vib, float health);
@@ -77,6 +85,7 @@ void setup() {
   
   // Hardware setup
   pinMode(VIB_PIN, INPUT);
+  attachInterrupt(digitalPinToInterrupt(VIB_PIN), vibrationISR, RISING);
   pinMode(LED_PIN, OUTPUT);
   dht.begin();
   
@@ -116,7 +125,12 @@ void loop() {
   digitalWrite(LED_PIN, HIGH);
   float h = dht.readHumidity();
   float t = dht.readTemperature();
-  int vib = digitalRead(VIB_PIN);
+  int rawVib = digitalRead(VIB_PIN);
+  if (rawVibTriggered) {
+    rawVib = HIGH;
+    rawVibTriggered = false;
+  }
+  int vib = rawVib; // Strictly raw instantaneous vibration
   int sound = analogRead(SOUND_PIN);
   
   // Validate sensor readings
@@ -245,6 +259,7 @@ void sendDataToBackend(float temp, float hum, int sound, int vib, float health) 
   HTTPClient http;
   http.begin(API_ENDPOINT);
   http.addHeader("Content-Type", "application/json");
+  http.addHeader("x-api-key", API_KEY);
   
   // Create JSON payload
   StaticJsonDocument<256> doc;
@@ -320,7 +335,7 @@ void sendSMS(String msg) {
   
   sim800.println("AT+CMGF=1");  // Text mode
   delay(500);
-  sim800.println("AT+CMGS=\"+917992392784\"");  // Your phone number
+  sim800.println("AT+CMGS=\"" + String(TARGET_PHONE_NUMBER) + "+918797726950"");  // Your phone number
   delay(500);
   sim800.println(msg);
   delay(500);

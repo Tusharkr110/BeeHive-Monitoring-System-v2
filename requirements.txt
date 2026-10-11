@@ -1,0 +1,22 @@
+# BeeHive Monitoring System - required runtime tools
+# Install these before running the project locally:
+# - Node.js 18+
+# - npm (comes with Node.js)
+# - MongoDB server or MongoDB Compass
+# - Python 3.11
+# - Git
+# - VS Code (recommended)
+# - PlatformIO for ESP32 firmware (optional for hardware testing)
+
+# Python packages required by the ML service
+Flask==3.0.3
+flask-cors==4.0.1
+numpy==1.26.4
+pandas==2.2.2
+scikit-learn==1.4.2
+joblib==1.4.2
+
+# Node.js / JavaScript runtime stack for backend + frontend
+# Backend dependencies are managed in: backend/package.json
+# Frontend dependencies are managed in: frontend/package.json
+# Required runtime tools: Node.js 18+, npm, MongoDB

@@ -1,198 +1,96 @@
 import React from "react";
+import "./HiveMLBridge.css";
 
-const SEVERITY_STYLES = {
+const CONFIG = {
   healthy: {
-    bg: "#e8f5e9",
-    text: "#2e7d32",
-    bar: "#4caf50",
+    accent: "#22c55e",
+    bg: "rgba(34,197,94,0.08)",
+    border: "rgba(34,197,94,0.18)",
     icon: "🟢",
-    label: "Healthy",
+    tag: "Healthy",
   },
   warning: {
-    bg: "#fff8e1",
-    text: "#f57f17",
-    bar: "#ffc107",
+    accent: "#eab308",
+    bg: "rgba(234,179,8,0.08)",
+    border: "rgba(234,179,8,0.18)",
     icon: "🟡",
-    label: "Queenless",
+    tag: "Warning",
   },
   critical: {
-    bg: "#ffebee",
-    text: "#c62828",
-    bar: "#f44336",
+    accent: "#ef4444",
+    bg: "rgba(239,68,68,0.08)",
+    border: "rgba(239,68,68,0.18)",
     icon: "🔴",
-    label: "Anomaly",
+    tag: "Critical",
   },
   unknown: {
-    bg: "#f5f5f5",
-    text: "#616161",
-    bar: "#9e9e9e",
+    accent: "#4b5569",
+    bg: "rgba(75,85,105,0.08)",
+    border: "rgba(75,85,105,0.15)",
     icon: "⚪",
-    label: "Unavailable",
+    tag: "Unknown",
   },
 };
 
-const LABEL_MAP = {
+// Updated to match the actual ML model classes (NORMAL / MONITORING / CRITICAL)
+// instead of the old model's queenless/anomaly labels.
+const LABELS = {
   normal: "Normal",
-  stressed_queenless: "Stressed – Queenless",
-  stressed_anomaly: "Stressed – Anomaly",
+  monitoring: "Monitoring",
+  critical: "Critical",
   unavailable: "ML Unavailable",
 };
 
 const HiveMLBridge = ({ liveData }) => {
   if (!liveData) return null;
-
-  const severity = liveData.ml_severity || "unknown";
-  const style = SEVERITY_STYLES[severity] || SEVERITY_STYLES.unknown;
+  const cfg = CONFIG[liveData.ml_severity] || CONFIG.unknown;
   const label =
-    LABEL_MAP[liveData.ml_prediction] ||
-    liveData.ml_prediction ||
-    "Unavailable";
+    LABELS[liveData.ml_prediction] || liveData.ml_prediction || "Unavailable";
   const conf = liveData.ml_confidence ?? 0;
   const probs = liveData.ml_probabilities || {};
 
   return (
     <div
-      style={{
-        background: style.bg,
-        color: style.text,
-        borderRadius: 16,
-        padding: 20,
-        marginTop: 20,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-      }}
+      className="ml-card"
+      style={{ "--accent": cfg.accent, "--bg": cfg.bg, "--border": cfg.border }}
     >
       {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 12,
-        }}
-      >
-        <span
-          style={{
-            fontWeight: 700,
-            fontSize: 13,
-            textTransform: "uppercase",
-            letterSpacing: 1,
-          }}
-        >
-          🤖 AI Health Diagnosis
-        </span>
-        <span style={{ fontSize: 11, opacity: 0.6 }}>
-          Random Forest Ensemble
-        </span>
+      <div className="ml-card-header">
+        <div className="ml-card-tag">🤖 AI Diagnosis</div>
+        <span className="ml-model-badge">Random Forest</span>
       </div>
 
-      {/* Main prediction */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          marginBottom: 16,
-        }}
-      >
-        <span style={{ fontSize: 32 }}>{style.icon}</span>
+      {/* Main result */}
+      <div className="ml-result">
+        <div className="ml-result-icon">{cfg.icon}</div>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 20 }}>{label}</div>
-          <div style={{ fontSize: 12, opacity: 0.7 }}>{style.label}</div>
+          <div className="ml-result-label">{label}</div>
+          <div className="ml-result-sub">{cfg.tag} Colony</div>
         </div>
       </div>
 
-      {/* Confidence bar */}
-      <div style={{ marginBottom: 12 }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            fontSize: 13,
-            marginBottom: 4,
-          }}
-        >
-          <span>Confidence</span>
-          <strong>{conf.toFixed(1)}%</strong>
+      {/* Confidence */}
+      <div className="ml-conf">
+        <div className="ml-conf-row">
+          <span className="ml-conf-text">Confidence</span>
+          <strong className="ml-conf-pct">{conf.toFixed(1)}%</strong>
         </div>
-        <div
-          style={{ background: "rgba(0,0,0,0.1)", borderRadius: 4, height: 8 }}
-        >
-          <div
-            style={{
-              width: `${conf}%`,
-              height: 8,
-              borderRadius: 4,
-              background: style.bar,
-              transition: "width 0.7s ease",
-            }}
-          />
+        <div className="ml-bar-track">
+          <div className="ml-bar-fill" style={{ width: `${conf}%` }} />
         </div>
       </div>
 
-      {/* Probability breakdown */}
+      {/* Probabilities */}
       {Object.keys(probs).length > 0 && (
-        <div style={{ marginTop: 12 }}>
-          <div
-            style={{
-              fontSize: 11,
-              opacity: 0.7,
-              textTransform: "uppercase",
-              letterSpacing: 1,
-              marginBottom: 8,
-            }}
-          >
-            Class Probabilities
-          </div>
+        <div className="ml-probs">
+          <div className="ml-probs-title">Class Breakdown</div>
           {Object.entries(probs).map(([cls, pct]) => (
-            <div
-              key={cls}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 6,
-                fontSize: 12,
-              }}
-            >
-              <span
-                style={{
-                  width: 170,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  opacity: 0.85,
-                }}
-              >
-                {LABEL_MAP[cls] || cls}
-              </span>
-              <div
-                style={{
-                  flex: 1,
-                  background: "rgba(0,0,0,0.1)",
-                  borderRadius: 3,
-                  height: 6,
-                }}
-              >
-                <div
-                  style={{
-                    width: `${pct}%`,
-                    height: 6,
-                    borderRadius: 3,
-                    background: style.bar,
-                    opacity: 0.75,
-                  }}
-                />
+            <div className="ml-prob-row" key={cls}>
+              <span className="ml-prob-name">{LABELS[cls] || cls}</span>
+              <div className="ml-prob-track">
+                <div className="ml-prob-fill" style={{ width: `${pct}%` }} />
               </div>
-              <span
-                style={{
-                  width: 45,
-                  textAlign: "right",
-                  fontFamily: "monospace",
-                  fontWeight: 600,
-                }}
-              >
-                {pct.toFixed(1)}%
-              </span>
+              <span className="ml-prob-num">{pct.toFixed(1)}%</span>
             </div>
           ))}
         </div>

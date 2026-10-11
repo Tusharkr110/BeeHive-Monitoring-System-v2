@@ -230,7 +230,6 @@ py -3.11 -m venv venv
 venv\Scripts\activate
 
 # Install packages
-pip install flask==3.0.3 flask-cors==4.0.1 numpy scikit-learn==1.4.2 joblib==1.4.2
 ```
 
 > 📌 Make sure `ml_service/models/` contains both `.pkl` files before this step.

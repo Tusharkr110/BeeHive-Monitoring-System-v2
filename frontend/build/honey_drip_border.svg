@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90">
+  <defs>
+    <!-- Liquid Honey Body Gradient -->
+    <linearGradient id="honeyBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="25%" stop-color="#fbbf24"/>
+      <stop offset="65%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+
+    <!-- Honey Specular Highlight Gradient -->
+    <linearGradient id="honeyHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="40%" stop-color="#fef08a" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0.0"/>
+    </linearGradient>
+
+    <!-- Honey Drop Drop-Shadow -->
+    <filter id="honeyShadow" x="-10%" y="-10%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#78350f" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- 3D Liquid Honey Layer -->
+  <g filter="url(#honeyShadow)">
+    <!-- Honey Viscous Flow Base -->
+    <path d="M0 0 H300 V18 
+             C285 18 280 42 270 42 C260 42 255 18 240 18 
+             C225 18 220 68 205 68 C192 68 188 22 175 22 
+             C162 22 158 84 142 84 C128 84 122 30 110 30 
+             C98 30 94 62 82 62 C72 62 68 20 52 20 
+             C38 20 32 48 20 48 C10 48 5 18 0 18 Z" 
+          fill="url(#honeyBody)"/>
+
+    <!-- Specular Highlight Layer (Glossy 3D Sheen) -->
+    <path d="M0 0 H300 V6 
+             C285 6 281 36 270 36 C262 36 257 12 240 12 
+             C227 12 221 60 205 60 C194 60 189 16 175 16 
+             C164 16 159 76 142 76 C130 76 124 24 110 24 
+             C100 24 95 54 82 54 C74 54 70 14 52 14 
+             C40 14 34 40 20 40 C12 40 6 12 0 12 Z" 
+          fill="url(#honeyHighlight)"/>
+
+    <!-- Specular Light Reflection Bubbles -->
+    <ellipse cx="142" cy="74" rx="3.5" ry="6" fill="#ffffff" fill-opacity="0.85"/>
+    <ellipse cx="205" cy="58" rx="3" ry="5" fill="#ffffff" fill-opacity="0.85"/>
+    <ellipse cx="270" cy="34" rx="2.5" ry="4" fill="#ffffff" fill-opacity="0.8"/>
+  </g>
+</svg>

@@ -6,7 +6,14 @@ const Hive = require("../models/Hive");
 const { protect, authorize } = require("../middleware/auth");
 const deviceAuth = require("../middleware/deviceAuth");
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:5001";
+// FIX: default fallback port was 5001, but the Flask ML service actually
+// runs on port 8000 (see ml_service/app.py -> app.run(..., port=8000)).
+// If ML_SERVICE_URL isn't set in .env, every prediction call was silently
+// failing (caught in getMLPrediction) and every reading was being stored
+// as ml_prediction: "unavailable" with no visible error anywhere.
+// Best practice is still to set ML_SERVICE_URL explicitly in .env -
+// this fallback now at least matches what Flask is actually listening on.
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:8000";
 
 // ── Helper: call the Python ML service ───────────────────────────────────────
 async function getMLPrediction(payload) {
@@ -30,18 +37,21 @@ router.post("/data", deviceAuth, async (req, res) => {
       hive_id,
       temperature,
       humidity,
-      sound_level,
+      sound_envelope,
       vibration,
       health_score,
       fft_features,
     } = req.body;
 
     // Validate required fields
+    // FIX: was checking `sound_level`, which the ESP32 never sends (it
+    // sends `sound_envelope`) - every request from the device was failing
+    // this check with a 400 before it ever reached Mongo or the ML service.
     if (
       !hive_id ||
       temperature === undefined ||
       humidity === undefined ||
-      sound_level === undefined ||
+      sound_envelope === undefined ||
       vibration === undefined ||
       health_score === undefined
     ) {
@@ -59,7 +69,7 @@ router.post("/data", deviceAuth, async (req, res) => {
       hive_id,
       temperature,
       humidity,
-      sound_level,
+      sound_envelope,
       vibration,
       health_score,
       fft_features: fft_features || "",
@@ -69,12 +79,32 @@ router.post("/data", deviceAuth, async (req, res) => {
       ml_probabilities: mlResult?.probabilities || {},
     });
 
-    // 3. Update lastDataReceived in Hive model
-    await Hive.findOneAndUpdate(
-      { hive_id },
+    // 3. Find hive config & update lastDataReceived
+    const hiveConfig = await Hive.findOneAndUpdate(
+      { hive_id: hive_id.toUpperCase() },
       { lastDataReceived: new Date() },
-      { upsert: false },
+      { new: true },
     );
+
+    const smsAllowed = hiveConfig ? hiveConfig.smsAlertsEnabled : true;
+
+    // Check critical SMS condition & enforce SMS toggle setting
+    const isCriticalCondition =
+      temperature > 38 ||
+      health_score < 50 ||
+      Boolean(vibration) ||
+      hiveData.ml_severity === "critical";
+    if (isCriticalCondition) {
+      if (smsAllowed) {
+        console.log(
+          `[SMS] Alert dispatched for ${hive_id}! (Temp: ${temperature}C, Health: ${health_score}%)`,
+        );
+      } else {
+        console.log(
+          `[SMS] Alert suppressed for ${hive_id} because SMS Alerts are turned OFF in Dashboard.`,
+        );
+      }
+    }
 
     // 4. Emit real-time update via Socket.IO
     const io = req.app.get("io");
@@ -86,6 +116,7 @@ router.post("/data", deviceAuth, async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Data saved successfully",
+      smsAlertsEnabled: smsAllowed,
       data: hiveData,
       ml_prediction: hiveData.ml_prediction,
       ml_severity: hiveData.ml_severity,
@@ -98,6 +129,118 @@ router.post("/data", deviceAuth, async (req, res) => {
       message: "Server error",
       error: error.message,
     });
+  }
+});
+
+// @route   POST /api/hives/simulate
+// @desc    Simulate sensor alert states (temperature alert, sound alert, critical, normal)
+// @access  Private
+router.post("/simulate", protect, async (req, res) => {
+  try {
+    const { hive_id, type } = req.body;
+    if (!hive_id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "hive_id is required" });
+    }
+
+    let simulatedData = {};
+    switch (type) {
+      case "temperature_alert":
+        simulatedData = {
+          temperature: 43.5,
+          humidity: 32.0,
+          sound_envelope: 1450,
+          vibration: false,
+          health_score: 38,
+          ml_prediction: "critical",
+          ml_severity: "critical",
+          ml_confidence: 96.2,
+          ml_probabilities: {
+            normal: 1.5,
+            monitoring: 2.3,
+            critical: 96.2,
+          },
+        };
+        break;
+
+      case "sound_alert":
+        simulatedData = {
+          temperature: 34.8,
+          humidity: 62.5,
+          sound_envelope: 4250,
+          vibration: true,
+          health_score: 45,
+          ml_prediction: "monitoring",
+          ml_severity: "warning",
+          ml_confidence: 91.8,
+          ml_probabilities: {
+            normal: 3.2,
+            monitoring: 91.8,
+            critical: 5.0,
+          },
+        };
+        break;
+
+      case "critical_alert":
+        simulatedData = {
+          temperature: 45.2,
+          humidity: 24.0,
+          sound_envelope: 4800,
+          vibration: true,
+          health_score: 18,
+          ml_prediction: "critical",
+          ml_severity: "critical",
+          ml_confidence: 98.4,
+          ml_probabilities: {
+            normal: 0.6,
+            monitoring: 1.0,
+            critical: 98.4,
+          },
+        };
+        break;
+
+      case "normal":
+      default:
+        simulatedData = {
+          temperature: 34.1,
+          humidity: 68.0,
+          sound_envelope: 820,
+          vibration: false,
+          health_score: 96,
+          ml_prediction: "normal",
+          ml_severity: "healthy",
+          ml_confidence: 92.5,
+          ml_probabilities: {
+            normal: 92.5,
+            monitoring: 4.5,
+            critical: 3.0,
+          },
+        };
+        break;
+    }
+
+    const hiveData = await HiveData.create({
+      hive_id: hive_id.toUpperCase(),
+      ...simulatedData,
+      timestamp: new Date(),
+    });
+
+    await Hive.findOneAndUpdate(
+      { hive_id: hive_id.toUpperCase() },
+      { lastDataReceived: new Date() },
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Simulated ${type || "alert"} data generated`,
+      data: hiveData,
+    });
+  } catch (error) {
+    console.error("Simulation error:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 });
 
